@@ -1,0 +1,46 @@
+# OS
+.DS_Store
+Thumbs.db
+
+# IDE / editors
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# Environment / local config
+.env
+.env.*
+!.env.example
+
+# PHP / Composer
+/vendor/
+/composer.phar
+/.phpunit.result.cache
+/.php-cs-fixer.cache
+/.phpactor.json
+
+# Logs / runtime / cache
+/storage/
+/var/
+/tmp/
+*.log
+
+# Node / frontend tooling
+/node_modules/
+/npm-debug.log*
+/yarn-debug.log*
+/yarn-error.log*
+/pnpm-debug.log*
+
+# Docker / local data
+/postgres_data/
+/docker-compose.override.yml
+
+# Test / coverage
+/coverage/
+/.coverage
+
+# Generated uploads or user files
+/public/uploads/

@@ -1,0 +1,17 @@
+RewriteEngine On
+
+RewriteCond %{REQUEST_FILENAME} -f [OR]
+RewriteCond %{REQUEST_FILENAME} -d
+RewriteRule ^ - [L]
+
+RewriteRule ^$ index.php [L,QSA]
+RewriteRule ^menu/?$ menu.php [L,QSA]
+RewriteRule ^photos/?$ photos.php [L,QSA]
+RewriteRule ^contact/?$ contact.php [L,QSA]
+RewriteRule ^cart/?$ cart.php [L,QSA]
+RewriteRule ^login/?$ login.php [L,QSA]
+RewriteRule ^register/?$ register.php [L,QSA]
+RewriteRule ^logout/?$ logout.php [L,QSA]
+RewriteRule ^account/?$ account.php [L,QSA]
+RewriteRule ^admin/?$ admin.php [L,QSA]
+RewriteRule ^product/([^/]+)/?$ product.php?slug=$1 [L,QSA]

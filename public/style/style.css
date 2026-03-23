@@ -1,0 +1,99 @@
+body {
+  font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+  background-color: #fff;
+  color: #333;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+}
+.logo {
+  height: 40px;
+  width: 40px;
+}
+.header-padding {
+  padding-left: 3rem;
+  padding-right: 3rem;
+}
+@media (max-width: 768px) {
+  .header-padding {
+    padding-left: 1rem;
+    padding-right: 1rem;
+  }
+}
+.hero-background {
+  background: url(../images/hero.webp);
+  background-repeat: no-repeat;
+  background-position: top center;
+  background-size: cover;
+}
+
+/* menu */
+.pizza-card {
+  border: none;
+  border-radius: 15px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  transition: all 0.3s ease;
+  cursor: pointer;
+  border: 1px solid oklch(0.872 0.01 258.338);
+  padding: 1rem;
+}
+
+.pizza-card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.15);
+}
+
+.pizza-img {
+  object-fit: cover;
+  border-radius: 15px 15px 0 0;
+  padding-bottom: 10px;
+  border-bottom: 1px solid oklch(0.872 0.01 258.338);
+}
+
+.card-body {
+  padding: 1.25rem;
+}
+
+.card-title {
+  font-weight: 600;
+  color: #333;
+  margin-bottom: 0.75rem;
+}
+
+.card-text {
+  font-size: 0.9rem;
+  line-height: 1.5;
+  margin-bottom: 1rem;
+}
+
+.badge {
+  font-size: 0.7rem;
+  padding: 0.35em 0.65em;
+}
+
+.btn-outline-danger {
+  border-width: 1px;
+  font-size: 0.85rem;
+  padding: 0.375rem 0.75rem;
+}
+
+.summary-card,
+.cart-card,
+.form-section {
+  background: #fff;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.06);
+}
+
+.hero-background h1,
+.hero-background p {
+  text-shadow: 0 2px 12px rgba(0, 0, 0, 0.25);
+}
+
+.alert {
+  border-radius: 14px;
+}
+
+textarea.form-control {
+  resize: vertical;
+}

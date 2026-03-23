@@ -1,0 +1,6 @@
+.git
+.idea
+node_modules
+vendor
+postgres_data
+docker-compose.override.yml
