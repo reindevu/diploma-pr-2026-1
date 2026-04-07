@@ -21,6 +21,7 @@ $routes = [
     '/logout' => '/logout.php',
     '/account' => '/account.php',
     '/admin' => '/admin.php',
+    '/error' => '/error.php',
 ];
 
 if (isset($routes[$uri])) {
@@ -35,5 +36,5 @@ if (preg_match('#^/product/([^/]+)/?$#', $uri, $matches) === 1) {
 }
 
 http_response_code(404);
-require $publicPath . '/index.php';
+require $publicPath . '/error.php';
 return true;

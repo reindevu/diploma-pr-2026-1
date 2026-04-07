@@ -141,17 +141,14 @@ final class CartRepository
             return ['success' => false, 'message' => 'Промокод не найден.'];
         }
 
-        $nowCheck = Database::connection()->prepare(
-            'SELECT 1
-             WHERE (:starts_at IS NULL OR :starts_at <= NOW())
-               AND (:ends_at IS NULL OR :ends_at >= NOW())'
-        );
-        $nowCheck->execute([
-            'starts_at' => $promoCode['starts_at'],
-            'ends_at' => $promoCode['ends_at'],
-        ]);
+        $nowTimestamp = time();
+        $startsAtTimestamp = $promoCode['starts_at'] ? strtotime((string) $promoCode['starts_at']) : null;
+        $endsAtTimestamp = $promoCode['ends_at'] ? strtotime((string) $promoCode['ends_at']) : null;
 
-        if (!$nowCheck->fetchColumn()) {
+        if (
+            ($startsAtTimestamp !== null && $startsAtTimestamp > $nowTimestamp)
+            || ($endsAtTimestamp !== null && $endsAtTimestamp < $nowTimestamp)
+        ) {
             return ['success' => false, 'message' => 'Срок действия промокода истёк или ещё не начался.'];
         }
 

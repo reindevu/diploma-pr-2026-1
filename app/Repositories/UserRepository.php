@@ -8,6 +8,27 @@ use App\Database;
 
 final class UserRepository
 {
+    private static function normalizeAddressData(array $data): array
+    {
+        $fullAddress = trim((string) ($data['full_address'] ?? ''));
+
+        if ($fullAddress === '') {
+            throw new \RuntimeException('Укажите полный адрес.');
+        }
+
+        return [
+            'label' => trim((string) ($data['label'] ?? '')) ?: null,
+            'recipient_name' => trim((string) ($data['recipient_name'] ?? '')) ?: null,
+            'recipient_phone' => trim((string) ($data['recipient_phone'] ?? '')) ?: null,
+            'full_address' => $fullAddress,
+            'entrance' => trim((string) ($data['entrance'] ?? '')) ?: null,
+            'floor' => trim((string) ($data['floor'] ?? '')) ?: null,
+            'apartment' => trim((string) ($data['apartment'] ?? '')) ?: null,
+            'comment' => trim((string) ($data['comment'] ?? '')) ?: null,
+            'is_default' => isset($data['is_default']),
+        ];
+    }
+
     public static function updateProfile(int $userId, array $data): void
     {
         $statement = Database::connection()->prepare(
@@ -60,7 +81,8 @@ final class UserRepository
 
     public static function saveAddress(int $userId, array $data): void
     {
-        $isDefault = isset($data['is_default']);
+        $address = self::normalizeAddressData($data);
+        $isDefault = $address['is_default'];
 
         if ($isDefault) {
             Database::connection()->prepare('UPDATE user_addresses SET is_default = FALSE WHERE user_id = :user_id')
@@ -75,15 +97,103 @@ final class UserRepository
              )'
         )->execute([
             'user_id' => $userId,
-            'label' => trim((string) ($data['label'] ?? '')) ?: null,
-            'recipient_name' => trim((string) ($data['recipient_name'] ?? '')) ?: null,
-            'recipient_phone' => trim((string) ($data['recipient_phone'] ?? '')) ?: null,
-            'full_address' => trim((string) ($data['full_address'] ?? '')),
-            'entrance' => trim((string) ($data['entrance'] ?? '')) ?: null,
-            'floor' => trim((string) ($data['floor'] ?? '')) ?: null,
-            'apartment' => trim((string) ($data['apartment'] ?? '')) ?: null,
-            'comment' => trim((string) ($data['comment'] ?? '')) ?: null,
-            'is_default' => $isDefault,
+            'label' => $address['label'],
+            'recipient_name' => $address['recipient_name'],
+            'recipient_phone' => $address['recipient_phone'],
+            'full_address' => $address['full_address'],
+            'entrance' => $address['entrance'],
+            'floor' => $address['floor'],
+            'apartment' => $address['apartment'],
+            'comment' => $address['comment'],
+            'is_default' => $isDefault ? 'true' : 'false',
         ]);
+    }
+
+    public static function updateAddress(int $userId, int $addressId, array $data): void
+    {
+        $address = self::normalizeAddressData($data);
+        $isDefault = $address['is_default'];
+        $connection = Database::connection();
+
+        $exists = $connection->prepare('SELECT 1 FROM user_addresses WHERE id = :id AND user_id = :user_id');
+        $exists->execute([
+            'id' => $addressId,
+            'user_id' => $userId,
+        ]);
+
+        if (!$exists->fetchColumn()) {
+            throw new \RuntimeException('Адрес не найден.');
+        }
+
+        if ($isDefault) {
+            $connection->prepare('UPDATE user_addresses SET is_default = FALSE WHERE user_id = :user_id')
+                ->execute(['user_id' => $userId]);
+        }
+
+        $connection->prepare(
+            'UPDATE user_addresses
+             SET label = :label,
+                 recipient_name = :recipient_name,
+                 recipient_phone = :recipient_phone,
+                 full_address = :full_address,
+                 entrance = :entrance,
+                 floor = :floor,
+                 apartment = :apartment,
+                 comment = :comment,
+                 is_default = :is_default
+             WHERE id = :id AND user_id = :user_id'
+        )->execute([
+            'id' => $addressId,
+            'user_id' => $userId,
+            'label' => $address['label'],
+            'recipient_name' => $address['recipient_name'],
+            'recipient_phone' => $address['recipient_phone'],
+            'full_address' => $address['full_address'],
+            'entrance' => $address['entrance'],
+            'floor' => $address['floor'],
+            'apartment' => $address['apartment'],
+            'comment' => $address['comment'],
+            'is_default' => $isDefault ? 'true' : 'false',
+        ]);
+    }
+
+    public static function deleteAddress(int $userId, int $addressId): void
+    {
+        $connection = Database::connection();
+        $statement = $connection->prepare(
+            'SELECT id, is_default FROM user_addresses WHERE id = :id AND user_id = :user_id LIMIT 1'
+        );
+        $statement->execute([
+            'id' => $addressId,
+            'user_id' => $userId,
+        ]);
+
+        $address = $statement->fetch();
+
+        if (!$address) {
+            throw new \RuntimeException('Адрес не найден.');
+        }
+
+        $connection->prepare('DELETE FROM user_addresses WHERE id = :id AND user_id = :user_id')
+            ->execute([
+                'id' => $addressId,
+                'user_id' => $userId,
+            ]);
+
+        if (!empty($address['is_default'])) {
+            $nextDefault = $connection->prepare(
+                'SELECT id FROM user_addresses WHERE user_id = :user_id ORDER BY id DESC LIMIT 1'
+            );
+            $nextDefault->execute(['user_id' => $userId]);
+            $nextDefaultId = $nextDefault->fetchColumn();
+
+            if ($nextDefaultId) {
+                $connection->prepare('UPDATE user_addresses SET is_default = TRUE WHERE id = :id AND user_id = :user_id')
+                    ->execute([
+                        'id' => (int) $nextDefaultId,
+                        'user_id' => $userId,
+                    ]);
+            }
+        }
     }
 }

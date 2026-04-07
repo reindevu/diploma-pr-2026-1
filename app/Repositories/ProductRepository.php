@@ -94,7 +94,7 @@ final class ProductRepository
                     'short_description' => trim((string) $data['short_description']),
                     'full_description' => trim((string) $data['full_description']),
                     'image_path' => trim((string) $data['image_path']),
-                    'is_active' => isset($data['is_active']),
+                    'is_active' => self::pgBool(isset($data['is_active'])),
                     'sort_order' => (int) ($data['sort_order'] ?? 0),
                 ]);
             } else {
@@ -111,7 +111,7 @@ final class ProductRepository
                     'short_description' => trim((string) $data['short_description']),
                     'full_description' => trim((string) $data['full_description']),
                     'image_path' => trim((string) $data['image_path']),
-                    'is_active' => isset($data['is_active']),
+                    'is_active' => self::pgBool(isset($data['is_active'])),
                     'sort_order' => (int) ($data['sort_order'] ?? 0),
                 ]);
 
@@ -133,28 +133,63 @@ final class ProductRepository
 
             $variantSizes = $data['variant_size'] ?? [];
             $variantPrices = $data['variant_price'] ?? [];
+            $variantActiveFlags = $data['variant_active'] ?? [];
+            $submittedSizes = [];
 
             foreach ($variantSizes as $index => $size) {
                 $size = (float) $size;
                 $price = (float) ($variantPrices[$index] ?? 0);
+                $isActive = (bool) ((int) ($variantActiveFlags[$index] ?? 0));
 
                 if ($size <= 0 || $price < 0) {
                     continue;
+                }
+
+                $submittedSizes[] = $size;
+
+                if ($price <= 0 && $isActive) {
+                    throw new \RuntimeException('У активного размера должна быть указана цена больше нуля.');
                 }
 
                 $sku = strtoupper($slug) . '-' . (int) $size;
 
                 $connection->prepare(
                     'INSERT INTO product_variants (product_id, sku, size_cm, price, is_active)
-                     VALUES (:product_id, :sku, :size_cm, :price, TRUE)
+                     VALUES (:product_id, :sku, :size_cm, :price, :is_active)
                      ON CONFLICT (product_id, size_cm)
-                     DO UPDATE SET sku = EXCLUDED.sku, price = EXCLUDED.price, is_active = TRUE'
+                     DO UPDATE SET sku = EXCLUDED.sku, price = EXCLUDED.price, is_active = EXCLUDED.is_active'
                 )->execute([
                     'product_id' => $productId,
                     'sku' => $sku,
                     'size_cm' => $size,
                     'price' => $price,
+                    'is_active' => self::pgBool($isActive),
                 ]);
+            }
+
+            if ($productId !== null) {
+                $deactivate = $connection->prepare(
+                    'UPDATE product_variants
+                     SET is_active = FALSE
+                     WHERE product_id = :product_id AND size_cm = :size_cm'
+                );
+
+                $reactivate = $connection->prepare(
+                    'UPDATE product_variants
+                     SET is_active = TRUE
+                     WHERE product_id = :product_id AND size_cm = :size_cm'
+                );
+
+                foreach ([30.0, 35.0, 40.0] as $knownSize) {
+                    if (in_array($knownSize, $submittedSizes, true)) {
+                        continue;
+                    }
+
+                    $deactivate->execute([
+                        'product_id' => $productId,
+                        'size_cm' => $knownSize,
+                    ]);
+                }
             }
 
             $connection->commit();
@@ -195,7 +230,7 @@ final class ProductRepository
         $products = $statement->fetchAll();
 
         foreach ($products as &$product) {
-            $product['variants'] = self::variants((int) $product['id']);
+            $product['variants'] = self::variants((int) $product['id'], $includeInactive);
             $product['tags'] = self::tagsByProduct((int) $product['id']);
             $product['min_price'] = self::minPrice($product['variants']);
         }
@@ -203,11 +238,17 @@ final class ProductRepository
         return $products;
     }
 
-    private static function variants(int $productId): array
+    private static function variants(int $productId, bool $includeInactive = false): array
     {
-        $statement = Database::connection()->prepare(
-            'SELECT * FROM product_variants WHERE product_id = :product_id AND is_active = TRUE ORDER BY size_cm'
-        );
+        $sql = 'SELECT * FROM product_variants WHERE product_id = :product_id';
+
+        if (!$includeInactive) {
+            $sql .= ' AND is_active = TRUE';
+        }
+
+        $sql .= ' ORDER BY size_cm';
+
+        $statement = Database::connection()->prepare($sql);
         $statement->execute(['product_id' => $productId]);
 
         return $statement->fetchAll();
@@ -253,5 +294,10 @@ final class ProductRepository
         $value = trim($value, '-');
 
         return $value !== '' ? $value : 'product';
+    }
+
+    private static function pgBool(bool $value): string
+    {
+        return $value ? 'true' : 'false';
     }
 }
