@@ -1,0 +1,20 @@
+# robots.txt для сайта пиццерии Flour and Fire
+
+User-agent: *
+Disallow: /admin
+Disallow: /login
+Disallow: /register
+Disallow: /account
+Disallow: /cart
+Disallow: /*?*
+
+Allow: /
+Allow: /menu
+Allow: /photos
+Allow: /contact
+Allow: /product/margarita
+Allow: /product/chiken-pini
+Allow: /product/paprica-vida
+Allow: /product/spinachi
+
+Sitemap: https://flourandfire.ru/sitemap.xml

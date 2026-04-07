@@ -32,11 +32,15 @@ final class OrderRepository
         $deliveryAddress = trim((string) ($payload['delivery_address'] ?? ''));
 
         if ($recipientName === '' || $recipientPhone === '') {
-            throw new RuntimeException('Укажите имя и телефон получателя.');
+            if ($user) {
+                throw new RuntimeException('Для оформления заказа заполните имя и телефон в профиле.');
+            }
+
+            throw new RuntimeException('Заполните поля "Имя получателя" и "Телефон" в блоке оформления заказа.');
         }
 
         if ($deliveryMethod === 'delivery' && $deliveryAddress === '') {
-            throw new RuntimeException('Для доставки нужен адрес.');
+            throw new RuntimeException('Для доставки заполните поле "Адрес".');
         }
 
         $connection = Database::connection();
@@ -131,18 +135,67 @@ final class OrderRepository
     public static function byUser(int $userId): array
     {
         $statement = Database::connection()->prepare(
-            'SELECT * FROM orders WHERE user_id = :user_id ORDER BY placed_at DESC'
+            'SELECT o.*, pc.code AS promo_code
+             FROM orders o
+             LEFT JOIN promo_codes pc ON pc.id = o.promo_code_id
+             WHERE o.user_id = :user_id
+             ORDER BY o.placed_at DESC, o.id DESC'
         );
         $statement->execute(['user_id' => $userId]);
 
-        return $statement->fetchAll();
+        $orders = $statement->fetchAll();
+
+        return self::attachItems($orders);
     }
 
     public static function all(): array
     {
-        return Database::connection()
-            ->query('SELECT * FROM orders ORDER BY placed_at DESC, id DESC')
+        $orders = Database::connection()
+            ->query(
+                'SELECT o.*, pc.code AS promo_code
+                 FROM orders o
+                 LEFT JOIN promo_codes pc ON pc.id = o.promo_code_id
+                 ORDER BY o.placed_at DESC, o.id DESC'
+            )
             ->fetchAll();
+
+        return self::attachItems($orders);
+    }
+
+    private static function attachItems(array $orders): array
+    {
+        if ($orders === []) {
+            return [];
+        }
+
+        $orderIds = array_map(static fn (array $order): int => (int) $order['id'], $orders);
+        $placeholders = implode(', ', array_fill(0, count($orderIds), '?'));
+
+        $itemsStatement = Database::connection()->prepare(
+            "SELECT
+                oi.order_id,
+                oi.product_name_snapshot,
+                oi.size_cm_snapshot,
+                oi.quantity,
+                oi.unit_price,
+                oi.line_total
+             FROM order_items oi
+             WHERE oi.order_id IN ($placeholders)
+             ORDER BY oi.order_id DESC, oi.id ASC"
+        );
+        $itemsStatement->execute($orderIds);
+
+        $itemsByOrder = [];
+        foreach ($itemsStatement->fetchAll() as $item) {
+            $itemsByOrder[(int) $item['order_id']][] = $item;
+        }
+
+        foreach ($orders as &$order) {
+            $order['items'] = $itemsByOrder[(int) $order['id']] ?? [];
+        }
+        unset($order);
+
+        return $orders;
     }
 
     public static function updateStatus(int $orderId, string $status, ?int $userId): void

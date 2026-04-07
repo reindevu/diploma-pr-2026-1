@@ -17,7 +17,7 @@ function app_name(): string
 
 function asset(string $path): string
 {
-    return ltrim($path, '/');
+    return url($path);
 }
 
 function view_path(string $path): string
@@ -173,4 +173,50 @@ function guest_token(): string
 function page_title(string $title): string
 {
     return $title . ' | ' . app_name();
+}
+
+function save_uploaded_image(array $file, string $targetDir = 'uploads/products'): ?string
+{
+    if (($file['error'] ?? UPLOAD_ERR_NO_FILE) === UPLOAD_ERR_NO_FILE) {
+        return null;
+    }
+
+    if (($file['error'] ?? UPLOAD_ERR_OK) !== UPLOAD_ERR_OK) {
+        throw new RuntimeException('Не удалось загрузить изображение.');
+    }
+
+    $tmpName = (string) ($file['tmp_name'] ?? '');
+    if ($tmpName === '' || !is_uploaded_file($tmpName)) {
+        throw new RuntimeException('Файл загрузки не найден.');
+    }
+
+    $finfo = new finfo(FILEINFO_MIME_TYPE);
+    $mimeType = (string) $finfo->file($tmpName);
+    $extensions = [
+        'image/jpeg' => 'jpg',
+        'image/png' => 'png',
+        'image/webp' => 'webp',
+        'image/gif' => 'gif',
+    ];
+
+    if (!isset($extensions[$mimeType])) {
+        throw new RuntimeException('Допустимы только изображения JPG, PNG, WEBP или GIF.');
+    }
+
+    $relativeDirectory = trim($targetDir, '/');
+    $absoluteDirectory = PUBLIC_PATH . '/' . $relativeDirectory;
+
+    if (!is_dir($absoluteDirectory) && !mkdir($absoluteDirectory, 0775, true) && !is_dir($absoluteDirectory)) {
+        throw new RuntimeException('Не удалось создать папку для загрузок.');
+    }
+
+    $filename = bin2hex(random_bytes(16)) . '.' . $extensions[$mimeType];
+    $relativePath = $relativeDirectory . '/' . $filename;
+    $absolutePath = PUBLIC_PATH . '/' . $relativePath;
+
+    if (!move_uploaded_file($tmpName, $absolutePath)) {
+        throw new RuntimeException('Не удалось сохранить изображение.');
+    }
+
+    return $relativePath;
 }

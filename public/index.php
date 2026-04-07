@@ -7,7 +7,14 @@ require __DIR__ . '/../bootstrap/app.php';
 use App\Repositories\ProductRepository;
 
 $pageTitle = page_title('Главная');
+$pageDescription = 'Пиццерия Flour and Fire — настоящая итальянская пицца из дровяной печи. Свежайшие ингредиенты, тонкое тесто и атмосфера уюта. Доставка пиццы и самовывоз.';
+$pageKeywords = 'пиццерия, итальянская пицца, пицца из печи, дровяная печь, доставка пиццы, заказать пиццу, пицца на заказ';
+$pageOgTitle = 'Пиццерия Flour and Fire — итальянская пицца из дровяной печи';
+$pageOgDescription = 'Настоящая пицца из дровяной печи. Свежие ингредиенты, тонкое тесто, итальянские рецепты. Доставка и самовывоз.';
+$pageOgImage = 'images/hero.webp';
 $activePage = 'home';
+$bodyClass = 'position-relative';
+$showTopInfoBar = true;
 $products = [];
 $dbError = null;
 
@@ -22,7 +29,7 @@ require view_path('header.php');
 <div class="col-md-12 hero-background">
   <header class="text-center py-5 h-100">
     <h1 class="text-light">Настоящая итальянская пицца с настоящими ингредиентами</h1>
-    <p class="lead text-light">Лучшая итальянская пицца в одном месте</p>
+    <p class="lead text-light">Лучшая итальянская пицца</p>
   </header>
 
   <section class="container py-5">
@@ -31,8 +38,10 @@ require view_path('header.php');
       <div class="col-md-6">
         <h2 class="text-light">Мы используем проверенные рецепты и свежие ингредиенты</h2>
         <p class="text-light">
-          В нашей пиццерии каждая пицца — это вкус традиций и качество в каждой детали.
-          Меню, корзина и заказы теперь работают через PHP и Postgres.
+          В нашей пиццерии каждая пицца — это вкус традиций и качество в
+          каждой детали. Мы готовим по проверенным рецептам, которые
+          передаются из поколения в поколение, и используем только свежие
+          ингредиенты от местных фермеров.
         </p>
         <a href="<?= e(route('menu')) ?>" class="btn btn-light">Посмотреть меню</a>
       </div>
