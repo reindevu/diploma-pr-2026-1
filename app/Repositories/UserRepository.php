@@ -19,7 +19,7 @@ final class UserRepository
         return [
             'label' => trim((string) ($data['label'] ?? '')) ?: null,
             'recipient_name' => trim((string) ($data['recipient_name'] ?? '')) ?: null,
-            'recipient_phone' => trim((string) ($data['recipient_phone'] ?? '')) ?: null,
+            'recipient_phone' => normalize_phone($data['recipient_phone'] ?? null),
             'full_address' => $fullAddress,
             'entrance' => trim((string) ($data['entrance'] ?? '')) ?: null,
             'floor' => trim((string) ($data['floor'] ?? '')) ?: null,
@@ -45,7 +45,7 @@ final class UserRepository
             'first_name' => trim((string) $data['first_name']),
             'last_name' => trim((string) $data['last_name']),
             'email' => trim((string) $data['email']),
-            'phone' => trim((string) ($data['phone'] ?? '')) ?: null,
+            'phone' => normalize_phone($data['phone'] ?? null),
         ]);
     }
 

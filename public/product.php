@@ -37,13 +37,24 @@ if (is_post()) {
     }
 }
 
-$pageTitle = page_title($product['name'] ?? 'Товар');
+$tagNames = $product ? array_map(static fn (array $tag): string => (string) $tag['name'], $product['tags'] ?? []) : [];
+$pageTitle = page_title($product ? 'Пицца ' . (string) $product['name'] : 'Товар');
 $pageDescription = (string) ($product['short_description'] ?? 'Описание пиццы Flour and Fire.');
-$pageKeywords = 'пицца, меню пиццерии, заказать пиццу, итальянская пицца';
+$pageKeywords = $product
+    ? implode(', ', array_filter([
+        'пицца ' . (string) $product['name'],
+        'заказать пиццу ' . (string) $product['name'],
+        'доставка пиццы',
+        'Flour and Fire',
+        ...$tagNames,
+    ]))
+    : 'пицца, меню пиццерии, заказать пиццу, итальянская пицца';
 $pageRobots = $product ? 'index, follow' : 'noindex, follow';
 $pageOgTitle = $product ? 'Пицца ' . (string) $product['name'] . ' | Flour and Fire' : 'Товар | Flour and Fire';
 $pageOgDescription = (string) ($product['short_description'] ?? 'Выберите пиццу Flour and Fire.');
 $pageOgImage = (string) ($product['image_path'] ?? 'images/logo.png');
+$pageOgType = $product ? 'product' : 'website';
+$pageCanonical = $product ? absolute_url(route('product', ['slug' => $product['slug']])) : current_url();
 $activePage = 'menu';
 $showTopInfoBar = false;
 
@@ -53,6 +64,7 @@ if (!$product && !$dbError) {
     $pageOgTitle = '404 — Страница не найдена | Flour and Fire';
     $pageOgDescription = 'Кажется, такая пицца не в нашем меню. Вернитесь на главную и выберите что-то вкусное!';
     $pageOgImage = 'images/hero.webp';
+    $pageCanonical = current_url();
 }
 
 if ($product) {
@@ -64,6 +76,27 @@ if ($product) {
             break;
         }
     }
+
+    $pageSchema = [
+        '@context' => 'https://schema.org',
+        '@type' => 'Product',
+        'name' => 'Пицца ' . (string) $product['name'],
+        'description' => $pageDescription,
+        'image' => absolute_url($product['image_path'] ?: 'images/logo.png'),
+        'url' => $pageCanonical,
+        'brand' => [
+            '@type' => 'Brand',
+            'name' => app_name(),
+        ],
+        'offers' => [
+            '@type' => 'AggregateOffer',
+            'priceCurrency' => 'RUB',
+            'lowPrice' => (float) $product['min_price'],
+            'highPrice' => (float) max(array_column($product['variants'], 'price')),
+            'offerCount' => count($product['variants']),
+            'availability' => 'https://schema.org/InStock',
+        ],
+    ];
 }
 
 require view_path('header.php');

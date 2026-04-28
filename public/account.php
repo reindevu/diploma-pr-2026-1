@@ -32,8 +32,9 @@ if (is_post()) {
                 throw new RuntimeException('Подтверждение нового пароля не совпадает.');
             }
 
-            if (mb_strlen($newPassword) < 8) {
-                throw new RuntimeException('Новый пароль слишком короткий.');
+            $passwordErrors = password_validation_errors($newPassword);
+            if ($passwordErrors !== []) {
+                throw new RuntimeException($passwordErrors[0]);
             }
 
             if (!UserRepository::changePassword((int) $user['id'], (string) ($_POST['current_password'] ?? ''), $newPassword)) {
@@ -112,7 +113,7 @@ require view_path('header.php');
           </div>
           <div class="mb-3">
             <label for="phone" class="form-label">Телефон</label>
-            <input type="text" class="form-control" id="phone" name="phone" placeholder="+7 (999) 123-45-67" value="<?= e($user['phone'] ?? '') ?>">
+            <input type="tel" class="form-control" id="phone" name="phone" placeholder="+79991234567" value="<?= e($user['phone'] ?? '') ?>">
           </div>
           <div class="text-end">
             <button type="submit" class="btn btn-dark">Сохранить изменения</button>
@@ -132,7 +133,7 @@ require view_path('header.php');
           <div class="mb-3">
             <label for="newPassword" class="form-label">Новый пароль</label>
             <input type="password" class="form-control" id="newPassword" name="new_password" placeholder="Придумайте новый пароль" minlength="8" autocomplete="new-password">
-            <div class="form-text" id="accountPasswordHelp">Пароль должен содержать минимум 8 символов</div>
+            <div class="form-text" id="accountPasswordHelp">Пароль должен содержать минимум 8 символов, буквы разного регистра, цифру и спецсимвол</div>
           </div>
           <div class="mb-3">
             <label for="confirmPassword" class="form-label">Подтвердите новый пароль</label>
@@ -169,7 +170,7 @@ require view_path('header.php');
             </div>
             <div class="col-md-6">
               <label for="recipientPhone" class="form-label">Телефон</label>
-              <input type="text" class="form-control" id="recipientPhone" name="recipient_phone" placeholder="+7 (999) 123-45-67" />
+              <input type="tel" class="form-control" id="recipientPhone" name="recipient_phone" placeholder="+79991234567" />
             </div>
           </div>
           <div class="form-check mb-3">
@@ -246,11 +247,11 @@ require view_path('header.php');
                   <div class="col-md-6">
                     <label class="form-label" for="recipientPhone<?= (int) $address['id'] ?>">Телефон</label>
                     <input
-                      type="text"
+                      type="tel"
                       class="form-control"
                       id="recipientPhone<?= (int) $address['id'] ?>"
                       name="recipient_phone"
-                      placeholder="+7 (999) 123-45-67"
+                      placeholder="+79991234567"
                       value="<?= e($address['recipient_phone'] ?? '') ?>"
                     />
                   </div>
@@ -287,7 +288,7 @@ require view_path('header.php');
                 <strong><?= e($order['order_number']) ?></strong>
                 <span><?= e(format_price($order['total_amount'])) ?></span>
               </div>
-              <div class="small text-muted mb-2">Статус: <?= e($order['status']) ?></div>
+              <div class="small text-muted mb-2">Статус: <?= e(order_status_label((string) $order['status'])) ?></div>
               <div class="small mb-1">
                 <strong>Способ получения:</strong>
                 <?= e($order['delivery_method'] === 'pickup' ? 'Самовывоз' : 'Доставка') ?>
@@ -336,21 +337,60 @@ require view_path('header.php');
     }
 
     const updatePasswordState = function () {
+      const value = newPasswordInput.value;
+      const hasLower = /[a-zа-яё]/.test(value);
+      const hasUpper = /[A-ZА-ЯЁ]/.test(value);
+      const hasDigit = /\d/.test(value);
+      const hasSpecial = /[^a-zа-яё0-9]/i.test(value);
+      const uniqueCharacters = new Set(value).size;
+      const missingParts = [];
+
       if (newPasswordInput.value === '') {
-        passwordHelp.textContent = 'Пароль должен содержать минимум 8 символов';
+        passwordHelp.textContent = 'Пароль должен содержать минимум 8 символов, буквы разного регистра, цифру и спецсимвол';
         passwordHelp.style.color = '';
         newPasswordInput.setCustomValidity('');
         return;
       }
 
-      if (newPasswordInput.value.length < 8) {
+      if (value.length < 8) {
         passwordHelp.textContent = 'Новый пароль слишком короткий';
         passwordHelp.style.color = '#dc3545';
         newPasswordInput.setCustomValidity('Новый пароль слишком короткий');
         return;
       }
 
-      passwordHelp.textContent = 'Пароль подходит по длине';
+      if (!hasLower) {
+        missingParts.push('строчную букву');
+      }
+
+      if (!hasUpper) {
+        missingParts.push('заглавную букву');
+      }
+
+      if (!hasDigit) {
+        missingParts.push('цифру');
+      }
+
+      if (!hasSpecial) {
+        missingParts.push('спецсимвол');
+      }
+
+      if (uniqueCharacters <= 3) {
+        passwordHelp.textContent = 'Пароль не должен состоять из повторяющихся символов';
+        passwordHelp.style.color = '#dc3545';
+        newPasswordInput.setCustomValidity('Пароль не должен состоять из повторяющихся символов');
+        return;
+      }
+
+      if (missingParts.length > 0) {
+        const message = 'Добавьте в пароль: ' + missingParts.join(', ');
+        passwordHelp.textContent = message;
+        passwordHelp.style.color = '#dc3545';
+        newPasswordInput.setCustomValidity(message);
+        return;
+      }
+
+      passwordHelp.textContent = 'Пароль подходит';
       passwordHelp.style.color = '#198754';
       newPasswordInput.setCustomValidity('');
     };

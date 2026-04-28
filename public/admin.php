@@ -15,6 +15,7 @@ $products = [];
 $orders = [];
 $promoCodes = [];
 $categories = [];
+$tags = [];
 $dbError = null;
 
 try {
@@ -22,6 +23,7 @@ try {
     $orders = OrderRepository::all();
     $promoCodes = PromoCodeRepository::all();
     $categories = ProductRepository::categories();
+    $tags = ProductRepository::tags();
 } catch (Throwable $exception) {
     $dbError = $exception->getMessage();
 }
@@ -56,6 +58,10 @@ if (is_post()) {
     $action = (string) ($_POST['action'] ?? '');
 
     try {
+        if (isset($_POST['delete_product_id'])) {
+            $action = 'delete_product';
+        }
+
         if ($action === 'save_product') {
             $productId = isset($_POST['product_id']) && $_POST['product_id'] !== '' ? (int) $_POST['product_id'] : null;
             $payload = $_POST;
@@ -103,6 +109,11 @@ if (is_post()) {
 
             ProductRepository::save($payload, $productId);
             flash('success', 'Товар сохранён.');
+        }
+
+        if ($action === 'delete_product') {
+            ProductRepository::delete((int) ($_POST['delete_product_id'] ?? $_POST['product_id'] ?? 0));
+            flash('success', 'Пицца удалена.');
         }
 
         if ($action === 'update_order_status') {
@@ -173,6 +184,21 @@ require view_path('header.php');
                 <textarea class="form-control" id="pizzaDescription" name="short_description" rows="3" required></textarea>
               </div>
 
+              <?php if ($tags !== []): ?>
+                <div class="mb-4">
+                  <label class="form-label d-block">Теги</label>
+                  <div class="d-flex flex-wrap gap-3">
+                    <?php foreach ($tags as $tag): ?>
+                      <?php $tagId = (int) $tag['id']; ?>
+                      <div class="form-check">
+                        <input class="form-check-input" type="checkbox" name="tag_ids[]" value="<?= $tagId ?>" id="newTag<?= $tagId ?>">
+                        <label class="form-check-label" for="newTag<?= $tagId ?>"><?= e($tag['name']) ?></label>
+                      </div>
+                    <?php endforeach; ?>
+                  </div>
+                </div>
+              <?php endif; ?>
+
               <h5 class="mb-3">Варианты товара</h5>
               <?php foreach ($variantTemplate as $index => $size): ?>
                 <div class="row g-3 mb-2">
@@ -214,6 +240,7 @@ require view_path('header.php');
                 <?php foreach ($products as $product): ?>
                   <?php $formId = 'product-form-' . (int) $product['id']; ?>
                   <?php $variantRows = $variantRowsForProduct($product); ?>
+                  <?php $productTagIds = array_map(static fn (array $tag): int => (int) $tag['id'], $product['tags'] ?? []); ?>
                   <div class="col-12">
                     <form id="<?= e($formId) ?>" method="post" enctype="multipart/form-data" class="card">
                       <div class="card-body">
@@ -241,6 +268,28 @@ require view_path('header.php');
                       <label class="form-label">Описание</label>
                       <textarea class="form-control" name="short_description" rows="3" required><?= e($product['short_description']) ?></textarea>
                     </div>
+
+                    <?php if ($tags !== []): ?>
+                      <div class="mb-4">
+                        <label class="form-label d-block">Теги</label>
+                        <div class="d-flex flex-wrap gap-3">
+                          <?php foreach ($tags as $tag): ?>
+                            <?php $tagId = (int) $tag['id']; ?>
+                            <div class="form-check">
+                              <input
+                                class="form-check-input"
+                                type="checkbox"
+                                name="tag_ids[]"
+                                value="<?= $tagId ?>"
+                                id="product<?= (int) $product['id'] ?>Tag<?= $tagId ?>"
+                                <?= in_array($tagId, $productTagIds, true) ? 'checked' : '' ?>
+                              >
+                              <label class="form-check-label" for="product<?= (int) $product['id'] ?>Tag<?= $tagId ?>"><?= e($tag['name']) ?></label>
+                            </div>
+                          <?php endforeach; ?>
+                        </div>
+                      </div>
+                    <?php endif; ?>
 
                     <h5 class="mb-3">Варианты товара</h5>
                     <div class="table-responsive">
@@ -279,7 +328,16 @@ require view_path('header.php');
                       </table>
                     </div>
 
-                    <div class="text-end">
+                    <div class="d-flex justify-content-end gap-2">
+                      <button
+                        type="submit"
+                        class="btn btn-outline-danger"
+                        name="delete_product_id"
+                        value="<?= (int) $product['id'] ?>"
+                        onclick="return confirm('Удалить эту пиццу?');"
+                      >
+                        Удалить
+                      </button>
                       <button type="submit" class="btn btn-dark">Сохранить</button>
                     </div>
                   </div>
@@ -339,7 +397,7 @@ require view_path('header.php');
                   <?php endif; ?>
                   <select class="form-select mb-2" name="status">
                     <?php foreach (['new', 'confirmed', 'preparing', 'out_for_delivery', 'completed', 'cancelled'] as $status): ?>
-                      <option value="<?= e($status) ?>"<?= $order['status'] === $status ? ' selected' : '' ?>><?= e($status) ?></option>
+                      <option value="<?= e($status) ?>"<?= $order['status'] === $status ? ' selected' : '' ?>><?= e(order_status_label($status)) ?></option>
                     <?php endforeach; ?>
                   </select>
                   <button class="btn btn-outline-dark btn-sm">Обновить статус</button>

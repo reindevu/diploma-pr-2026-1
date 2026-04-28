@@ -39,6 +39,8 @@ final class OrderRepository
             throw new RuntimeException('Заполните поля "Имя получателя" и "Телефон" в блоке оформления заказа.');
         }
 
+        $recipientPhone = normalize_phone($recipientPhone);
+
         if ($deliveryMethod === 'delivery' && $deliveryAddress === '') {
             throw new RuntimeException('Для доставки заполните поле "Адрес".');
         }

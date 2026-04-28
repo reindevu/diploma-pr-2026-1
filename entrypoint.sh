@@ -74,6 +74,8 @@ PHP
     fi
   else
     echo "Schema already exists, skipping migrations."
+    echo "Running schema upgrades..."
+    php scripts/upgrade.php
   fi
 fi
 

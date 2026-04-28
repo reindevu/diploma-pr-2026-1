@@ -116,6 +116,51 @@ textarea.form-control {
   max-width: 150px;
 }
 
+.tag-badge-new {
+  background: #0dcaf0;
+  color: #111;
+}
+
+.tag-badge-hit {
+  background: #ffc107;
+  color: #111;
+}
+
+.tag-badge-spicy {
+  background: #dc3545;
+  color: #fff;
+}
+
+.tag-badge-vegetarian {
+  background: #198754;
+  color: #fff;
+}
+
+.tag-badge-cheesy {
+  background: #ffe08a;
+  color: #4a3200;
+}
+
+.tag-badge-meat {
+  background: #7c2d12;
+  color: #fff;
+}
+
+.tag-badge-recommended {
+  background: #0d6efd;
+  color: #fff;
+}
+
+.tag-badge-sale {
+  background: #d63384;
+  color: #fff;
+}
+
+.tag-badge-signature {
+  background: #6f42c1;
+  color: #fff;
+}
+
 .password-strength {
   height: 6px;
   border-radius: 999px;

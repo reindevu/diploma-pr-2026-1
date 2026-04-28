@@ -76,7 +76,7 @@ require view_path('header.php');
           <div class="password-strength mt-2">
             <div class="strength-bar" id="strengthBar"></div>
           </div>
-          <div class="form-text" id="passwordHelp">Пароль должен содержать минимум 8 символов</div>
+          <div class="form-text" id="passwordHelp">Пароль должен содержать минимум 8 символов, буквы разного регистра, цифру и спецсимвол</div>
         </div>
 
         <div class="col-12">
@@ -101,6 +101,13 @@ require view_path('header.php');
               Я согласен с <a href="#">условиями использования</a> и
               <a href="#">политикой конфиденциальности</a>
             </label>
+          </div>
+        </div>
+
+        <div class="col-12">
+          <div class="form-check">
+            <input class="form-check-input" type="checkbox" id="rememberMe" name="remember" value="1" />
+            <label class="form-check-label" for="rememberMe">Запомнить меня</label>
           </div>
         </div>
 
@@ -175,7 +182,7 @@ require view_path('header.php');
           width: '25%',
           color: '#dc3545',
           text: 'Слабый пароль: слишком много повторяющихся символов',
-          valid: true,
+          valid: false,
         };
       }
 
@@ -184,7 +191,7 @@ require view_path('header.php');
           width: '30%',
           color: '#dc3545',
           text: 'Слабый пароль: добавьте ' + missingParts.slice(0, 2).join(' и '),
-          valid: true,
+          valid: false,
         };
       }
 
@@ -193,25 +200,16 @@ require view_path('header.php');
           width: '55%',
           color: '#fd7e14',
           text: 'Средний пароль: для надёжности добавьте ' + missingParts.slice(0, 2).join(' и '),
-          valid: true,
-        };
-      }
-
-      if (typesCount === 3 && value.length < 12) {
-        return {
-          width: '75%',
-          color: '#ffc107',
-          text: 'Хороший пароль: сделайте его длиннее или добавьте ещё один тип символов',
-          valid: true,
+          valid: false,
         };
       }
 
       if (typesCount === 3) {
         return {
-          width: '85%',
-          color: '#20a36a',
-          text: 'Хороший пароль',
-          valid: true,
+          width: '75%',
+          color: '#ffc107',
+          text: 'Почти готово: добавьте ' + missingParts[0],
+          valid: false,
         };
       }
 
