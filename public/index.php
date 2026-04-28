@@ -12,6 +12,29 @@ $pageKeywords = 'пиццерия, итальянская пицца, пицца
 $pageOgTitle = 'Пиццерия Flour and Fire — итальянская пицца из дровяной печи';
 $pageOgDescription = 'Настоящая пицца из дровяной печи. Свежие ингредиенты, тонкое тесто, итальянские рецепты. Доставка и самовывоз.';
 $pageOgImage = 'images/hero.webp';
+$pageCanonical = absolute_url(route('home'));
+$pageSchema = [
+    '@context' => 'https://schema.org',
+    '@type' => 'Restaurant',
+    'name' => app_name(),
+    'description' => $pageDescription,
+    'servesCuisine' => ['Итальянская кухня', 'Пицца'],
+    'image' => absolute_url('images/hero.webp'),
+    'url' => $pageCanonical,
+    'telephone' => '+79371234567',
+    'address' => [
+        '@type' => 'PostalAddress',
+        'streetAddress' => 'бульвар Купца Ефремова, 3',
+        'addressLocality' => 'Чебоксары',
+        'addressCountry' => 'RU',
+    ],
+    'openingHoursSpecification' => [[
+        '@type' => 'OpeningHoursSpecification',
+        'dayOfWeek' => ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'],
+        'opens' => '10:00',
+        'closes' => '23:00',
+    ]],
+];
 $activePage = 'home';
 $bodyClass = 'position-relative';
 $showTopInfoBar = true;

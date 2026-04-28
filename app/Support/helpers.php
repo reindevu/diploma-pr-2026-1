@@ -34,6 +34,25 @@ function url(string $path): string
     return '/' . ltrim($path, '/');
 }
 
+function absolute_url(string $path): string
+{
+    if (str_starts_with($path, 'http://') || str_starts_with($path, 'https://')) {
+        return $path;
+    }
+
+    $scheme = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? 'https' : 'http';
+    $host = $_SERVER['HTTP_HOST'] ?? 'localhost';
+
+    return $scheme . '://' . $host . url($path);
+}
+
+function current_url(): string
+{
+    $uri = (string) ($_SERVER['REQUEST_URI'] ?? '/');
+
+    return absolute_url($uri);
+}
+
 function route(string $name, array $params = []): string
 {
     return match ($name) {
@@ -159,6 +178,72 @@ function is_post(): bool
 function format_price(float|int|string $amount): string
 {
     return number_format((float) $amount, 0, '.', ' ') . ' ₽';
+}
+
+function normalize_phone(?string $phone): ?string
+{
+    $phone = trim((string) $phone);
+
+    if ($phone === '') {
+        return null;
+    }
+
+    if (!str_starts_with($phone, '+7')) {
+        throw new RuntimeException('Телефон должен начинаться с +7.');
+    }
+
+    $digits = preg_replace('/\D+/', '', $phone) ?: '';
+
+    if (strlen($digits) !== 11 || !str_starts_with($digits, '7')) {
+        throw new RuntimeException('Телефон должен содержать 11 цифр, начиная с 7.');
+    }
+
+    return '+' . $digits;
+}
+
+function password_validation_errors(string $password): array
+{
+    $errors = [];
+
+    if (mb_strlen($password) < 8) {
+        $errors[] = 'Пароль должен содержать минимум 8 символов.';
+    }
+
+    if (!preg_match('/[a-zа-яё]/u', $password)) {
+        $errors[] = 'Пароль должен содержать строчную букву.';
+    }
+
+    if (!preg_match('/[A-ZА-ЯЁ]/u', $password)) {
+        $errors[] = 'Пароль должен содержать заглавную букву.';
+    }
+
+    if (!preg_match('/\d/u', $password)) {
+        $errors[] = 'Пароль должен содержать цифру.';
+    }
+
+    if (!preg_match('/[^a-zа-яё0-9]/iu', $password)) {
+        $errors[] = 'Пароль должен содержать спецсимвол.';
+    }
+
+    $characters = preg_split('//u', $password, -1, PREG_SPLIT_NO_EMPTY) ?: [];
+    if ($password !== '' && count(array_unique($characters)) <= 3) {
+        $errors[] = 'Пароль не должен состоять из повторяющихся символов.';
+    }
+
+    return $errors;
+}
+
+function order_status_label(string $status): string
+{
+    return match ($status) {
+        'new' => 'Новый',
+        'confirmed' => 'Подтверждён',
+        'preparing' => 'Готовится',
+        'out_for_delivery' => 'В доставке',
+        'completed' => 'Завершён',
+        'cancelled' => 'Отменён',
+        default => $status,
+    };
 }
 
 function guest_token(): string

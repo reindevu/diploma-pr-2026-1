@@ -9,6 +9,27 @@ $pageDescription = 'Контакты пиццерии Flour and Fire: адрес
 $pageKeywords = 'адрес пиццерии, телефон пиццерии, часы работы, контакты пиццерии, как проехать, пиццерия на карте';
 $pageOgTitle = 'Контакты пиццерии Flour and Fire — адрес и телефон';
 $pageOgDescription = 'Адрес, телефон, часы работы и схема проезда. Ждем вас в гости или доставим пиццу домой!';
+$pageOgImage = 'images/logo.png';
+$pageCanonical = absolute_url(route('contact'));
+$pageSchema = [
+    '@context' => 'https://schema.org',
+    '@type' => 'Restaurant',
+    'name' => app_name(),
+    'url' => $pageCanonical,
+    'telephone' => '+79371234567',
+    'address' => [
+        '@type' => 'PostalAddress',
+        'streetAddress' => 'бульвар Купца Ефремова, 3',
+        'addressLocality' => 'Чебоксары',
+        'addressCountry' => 'RU',
+    ],
+    'openingHoursSpecification' => [[
+        '@type' => 'OpeningHoursSpecification',
+        'dayOfWeek' => ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'],
+        'opens' => '10:00',
+        'closes' => '23:00',
+    ]],
+];
 $activePage = 'contact';
 $showTopInfoBar = true;
 

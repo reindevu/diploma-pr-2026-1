@@ -1,21 +1,28 @@
 <?php
 
 $badgeClasses = [
-    'hit' => 'bg-warning',
-    'vegetarian' => 'bg-success',
-    'new' => 'bg-info',
-    'spicy' => 'bg-danger',
+    'new' => 'tag-badge-new',
+    'hit' => 'tag-badge-hit',
+    'spicy' => 'tag-badge-spicy',
+    'vegetarian' => 'tag-badge-vegetarian',
+    'cheesy' => 'tag-badge-cheesy',
+    'meat' => 'tag-badge-meat',
+    'recommended' => 'tag-badge-recommended',
+    'sale' => 'tag-badge-sale',
+    'signature' => 'tag-badge-signature',
 ];
-
-$primaryTag = $product['tags'][0] ?? null;
-$badgeClass = $primaryTag ? ($badgeClasses[$primaryTag['code']] ?? 'bg-secondary') : null;
 ?>
 <div class="col-md-6 col-lg-3">
   <div class="card pizza-card h-100" onclick="location.href='<?= e(route('product', ['slug' => $product['slug']])) ?>'">
     <div class="position-relative">
       <img src="<?= e(asset($product['image_path'] ?: 'images/logo.png')) ?>" class="card-img-top pizza-img" alt="Пицца <?= e($product['name']) ?>" />
-      <?php if ($primaryTag): ?>
-        <span class="position-absolute top-0 end-0 badge <?= e($badgeClass) ?> m-2"><?= e($primaryTag['name']) ?></span>
+      <?php if (!empty($product['tags'])): ?>
+        <div class="position-absolute top-0 end-0 d-flex flex-column align-items-end gap-1 m-2">
+          <?php foreach ($product['tags'] as $tag): ?>
+            <?php $badgeClass = $badgeClasses[$tag['code']] ?? 'bg-secondary'; ?>
+            <span class="badge <?= e($badgeClass) ?>"><?= e($tag['name']) ?></span>
+          <?php endforeach; ?>
+        </div>
       <?php endif; ?>
     </div>
     <div class="card-body d-flex flex-column">

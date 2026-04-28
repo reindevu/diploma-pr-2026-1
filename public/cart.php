@@ -294,7 +294,7 @@ require view_path('header.php');
 
               <div class="mb-4">
                 <label class="form-label">Телефон</label>
-                <input type="text" class="form-control" name="recipient_phone" placeholder="+7 (999) 123-45-67" required />
+                <input type="tel" class="form-control" name="recipient_phone" placeholder="+79991234567" required />
               </div>
 
               <div class="mb-4">

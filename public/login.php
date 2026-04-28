@@ -14,7 +14,7 @@ if (is_post()) {
     verify_csrf();
     set_old_input($_POST);
 
-    if (Auth::attempt((string) ($_POST['email'] ?? ''), (string) ($_POST['password'] ?? ''))) {
+    if (Auth::attempt((string) ($_POST['email'] ?? ''), (string) ($_POST['password'] ?? ''), isset($_POST['remember']))) {
         clear_old_input();
         flash('success', 'Вы вошли в систему.');
         redirect(route('account'));
@@ -53,7 +53,7 @@ require view_path('header.php');
       </div>
 
       <div class="mb-3 form-check">
-        <input type="checkbox" class="form-check-input" id="rememberMe" />
+        <input type="checkbox" class="form-check-input" id="rememberMe" name="remember" value="1" />
         <label class="form-check-label" for="rememberMe">Запомнить меня</label>
       </div>
 

@@ -20,6 +20,8 @@ $pageOgTitle = $pageOgTitle ?? $pageTitle;
 $pageOgDescription = $pageOgDescription ?? $pageDescription;
 $pageOgImage = $pageOgImage ?? '';
 $pageOgType = $pageOgType ?? 'website';
+$pageCanonical = $pageCanonical ?? current_url();
+$pageSchema = $pageSchema ?? null;
 $bodyClass = $bodyClass ?? '';
 $showTopInfoBar = $showTopInfoBar ?? false;
 $user = current_user();
@@ -28,7 +30,7 @@ $ogImage = '';
 if ($pageOgImage !== '') {
     $ogImage = str_starts_with($pageOgImage, 'http')
         ? $pageOgImage
-        : url(ltrim($pageOgImage, '/'));
+        : absolute_url(ltrim($pageOgImage, '/'));
 }
 ?>
 <!DOCTYPE html>
@@ -43,6 +45,7 @@ if ($pageOgImage !== '') {
   <?php if ($pageKeywords !== ''): ?>
     <meta name="keywords" content="<?= e($pageKeywords) ?>" />
   <?php endif; ?>
+  <link rel="canonical" href="<?= e($pageCanonical) ?>" />
   <?php if ($pageOgTitle !== ''): ?>
     <meta property="og:title" content="<?= e($pageOgTitle) ?>" />
   <?php endif; ?>
@@ -53,13 +56,27 @@ if ($pageOgImage !== '') {
     <meta property="og:image" content="<?= e($ogImage) ?>" />
   <?php endif; ?>
   <meta property="og:type" content="<?= e($pageOgType) ?>" />
+  <meta property="og:url" content="<?= e($pageCanonical) ?>" />
+  <meta property="og:site_name" content="<?= e(app_name()) ?>" />
+  <meta property="og:locale" content="ru_RU" />
+  <meta name="twitter:card" content="<?= $ogImage !== '' ? 'summary_large_image' : 'summary' ?>" />
+  <meta name="twitter:title" content="<?= e($pageOgTitle) ?>" />
+  <?php if ($pageOgDescription !== ''): ?>
+    <meta name="twitter:description" content="<?= e($pageOgDescription) ?>" />
+  <?php endif; ?>
+  <?php if ($ogImage !== ''): ?>
+    <meta name="twitter:image" content="<?= e($ogImage) ?>" />
+  <?php endif; ?>
   <title><?= e($pageTitle) ?></title>
   <link rel="icon" href="<?= e(asset('images/logo.png')) ?>" type="image/x-icon" />
   <link rel="stylesheet" href="<?= e(asset('bootstrap/bootstrap.min.css')) ?>" />
   <link rel="stylesheet" href="<?= e(asset('style/style.css')) ?>" />
+  <?php if (is_array($pageSchema)): ?>
+    <script type="application/ld+json"><?= json_encode($pageSchema, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES) ?></script>
+  <?php endif; ?>
 </head>
 <body<?= $bodyClass !== '' ? ' class="' . e($bodyClass) . '"' : '' ?>>
-  <nav class="navbar navbar-expand-lg navbar-dark bg-dark sticky-top">
+  <nav class="navbar navbar-expand-lg navbar-dark bg-dark sticky-top" style="z-index: 1021">
     <div class="container">
       <a class="navbar-brand fw-bold d-flex align-items-center g-4" href="<?= e(route('home')) ?>">
         <img src="<?= e(asset('images/logo.png')) ?>" alt="Логотип" class="d-inline-block align-text-top logo" />

@@ -34,7 +34,23 @@ final class ProductRepository
     public static function tags(): array
     {
         return Database::connection()
-            ->query('SELECT * FROM product_tags ORDER BY name')
+            ->query(
+                "SELECT *
+                 FROM product_tags
+                 WHERE code IN ('new', 'hit', 'spicy', 'vegetarian', 'cheesy', 'meat', 'recommended', 'sale', 'signature')
+                 ORDER BY CASE code
+                   WHEN 'new' THEN 10
+                   WHEN 'hit' THEN 20
+                   WHEN 'spicy' THEN 30
+                   WHEN 'vegetarian' THEN 40
+                   WHEN 'cheesy' THEN 50
+                   WHEN 'meat' THEN 60
+                   WHEN 'recommended' THEN 70
+                   WHEN 'sale' THEN 80
+                   WHEN 'signature' THEN 90
+                   ELSE 100
+                 END"
+            )
             ->fetchAll();
     }
 
@@ -45,6 +61,11 @@ final class ProductRepository
              FROM products p
              JOIN product_categories c ON c.id = p.category_id
              WHERE p.slug = :slug AND p.is_active = TRUE
+               AND EXISTS (
+                   SELECT 1
+                   FROM product_variants pv
+                   WHERE pv.product_id = p.id AND pv.is_active = TRUE
+               )
              LIMIT 1'
         );
         $statement->execute(['slug' => $slug]);
@@ -59,6 +80,39 @@ final class ProductRepository
         $product['min_price'] = self::minPrice($product['variants']);
 
         return $product;
+    }
+
+    public static function delete(int $productId): void
+    {
+        $connection = Database::connection();
+        $connection->beginTransaction();
+
+        try {
+            $exists = $connection->prepare('SELECT 1 FROM products WHERE id = :id');
+            $exists->execute(['id' => $productId]);
+
+            if (!$exists->fetchColumn()) {
+                throw new \RuntimeException('Пицца не найдена.');
+            }
+
+            $connection->prepare(
+                'DELETE FROM cart_items
+                 WHERE product_variant_id IN (
+                     SELECT id FROM product_variants WHERE product_id = :product_id
+                 )'
+            )->execute(['product_id' => $productId]);
+
+            $connection->prepare('DELETE FROM products WHERE id = :id')
+                ->execute(['id' => $productId]);
+
+            $connection->commit();
+        } catch (\Throwable $exception) {
+            if ($connection->inTransaction()) {
+                $connection->rollBack();
+            }
+
+            throw $exception;
+        }
     }
 
     public static function save(array $data, ?int $productId = null): int
@@ -121,8 +175,16 @@ final class ProductRepository
             $connection->prepare('DELETE FROM product_tag_links WHERE product_id = :product_id')
                 ->execute(['product_id' => $productId]);
 
-            $tagIds = array_map('intval', $data['tag_ids'] ?? []);
+            $submittedTagIds = is_array($data['tag_ids'] ?? null) ? $data['tag_ids'] : [];
+            $tagIds = array_unique(array_map('intval', $submittedTagIds));
+            $allowedTagIds = array_map('intval', array_column(self::tags(), 'id'));
+            $tagIds = array_intersect($tagIds, $allowedTagIds);
+
             foreach ($tagIds as $tagId) {
+                if ($tagId <= 0) {
+                    continue;
+                }
+
                 $connection->prepare(
                     'INSERT INTO product_tag_links (product_id, tag_id) VALUES (:product_id, :tag_id)'
                 )->execute([
@@ -174,12 +236,6 @@ final class ProductRepository
                      WHERE product_id = :product_id AND size_cm = :size_cm'
                 );
 
-                $reactivate = $connection->prepare(
-                    'UPDATE product_variants
-                     SET is_active = TRUE
-                     WHERE product_id = :product_id AND size_cm = :size_cm'
-                );
-
                 foreach ([30.0, 35.0, 40.0] as $knownSize) {
                     if (in_array($knownSize, $submittedSizes, true)) {
                         continue;
@@ -211,7 +267,12 @@ final class ProductRepository
                 JOIN product_categories c ON c.id = p.category_id';
 
         if (!$includeInactive) {
-            $sql .= ' WHERE p.is_active = TRUE';
+            $sql .= ' WHERE p.is_active = TRUE
+                      AND EXISTS (
+                          SELECT 1
+                          FROM product_variants pv
+                          WHERE pv.product_id = p.id AND pv.is_active = TRUE
+                      )';
         }
 
         $sql .= ' ORDER BY p.sort_order, p.name';
@@ -257,11 +318,23 @@ final class ProductRepository
     private static function tagsByProduct(int $productId): array
     {
         $statement = Database::connection()->prepare(
-            'SELECT t.*
+            "SELECT t.*
              FROM product_tags t
              JOIN product_tag_links l ON l.tag_id = t.id
              WHERE l.product_id = :product_id
-             ORDER BY t.name'
+               AND t.code IN ('new', 'hit', 'spicy', 'vegetarian', 'cheesy', 'meat', 'recommended', 'sale', 'signature')
+             ORDER BY CASE t.code
+               WHEN 'new' THEN 10
+               WHEN 'hit' THEN 20
+               WHEN 'spicy' THEN 30
+               WHEN 'vegetarian' THEN 40
+               WHEN 'cheesy' THEN 50
+               WHEN 'meat' THEN 60
+               WHEN 'recommended' THEN 70
+               WHEN 'sale' THEN 80
+               WHEN 'signature' THEN 90
+               ELSE 100
+             END"
         );
         $statement->execute(['product_id' => $productId]);
 

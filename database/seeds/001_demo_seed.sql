@@ -17,10 +17,15 @@ SET
 
 INSERT INTO product_tags (code, name)
 VALUES
-  ('hit', 'Хит'),
-  ('vegetarian', 'Вегетарианская'),
   ('new', 'Новинка'),
-  ('spicy', 'Острое')
+  ('hit', 'Хит'),
+  ('spicy', 'Острое'),
+  ('vegetarian', 'Вегетарианская'),
+  ('cheesy', 'Сырная'),
+  ('meat', 'Мясная'),
+  ('recommended', 'Рекомендуем'),
+  ('sale', 'Акция'),
+  ('signature', 'Фирменная')
 ON CONFLICT (code) DO UPDATE
 SET name = EXCLUDED.name;
 
