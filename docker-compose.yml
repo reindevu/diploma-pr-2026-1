@@ -1,20 +1,18 @@
-version: "3.9"
-
 services:
   db:
     image: postgres:16
     container_name: flour_and_fire_db
     restart: unless-stopped
     environment:
-      POSTGRES_DB: flour_and_fire
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: ${DB_NAME:-flour_and_fire}
+      POSTGRES_USER: ${DB_USER:-postgres}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-postgres}
     ports:
-      - "5432:5432"
+      - "127.0.0.1:5432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U postgres -d flour_and_fire"]
+      test: ["CMD-SHELL", "PGPASSWORD=$$POSTGRES_PASSWORD pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB"]
       interval: 5s
       timeout: 5s
       retries: 20
@@ -31,15 +29,15 @@ services:
     environment:
       DB_HOST: db
       DB_PORT: 5432
-      DB_NAME: flour_and_fire
-      DB_USER: postgres
-      DB_PASSWORD: postgres
+      DB_NAME: ${DB_NAME:-flour_and_fire}
+      DB_USER: ${DB_USER:-postgres}
+      DB_PASSWORD: ${DB_PASSWORD:-postgres}
       AUTO_MIGRATE: "1"
       AUTO_SEED: "1"
-      ADMIN_EMAIL: admin@example.com
-      ADMIN_PASSWORD: Admin123!
-      ADMIN_FIRST_NAME: Admin
-      ADMIN_LAST_NAME: User
+      ADMIN_EMAIL: ${ADMIN_EMAIL:-admin@example.com}
+      ADMIN_PASSWORD: ${ADMIN_PASSWORD:-Admin123!}
+      ADMIN_FIRST_NAME: ${ADMIN_FIRST_NAME:-Admin}
+      ADMIN_LAST_NAME: ${ADMIN_LAST_NAME:-User}
     ports:
       - "10001:80"
     volumes:

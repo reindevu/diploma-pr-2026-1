@@ -4,6 +4,12 @@ PHP-приложение пиццерии с PostgreSQL.
 
 ## Запуск
 
+Перед первым запуском на сервере создай `.env` и поменяй пароли:
+
+```bash
+cp .env.example .env
+```
+
 ```bash
 docker compose up --build
 ```
@@ -13,7 +19,9 @@ docker compose up --build
 - сайт: [http://127.0.0.1:10001](http://127.0.0.1:10001)
 - админка: [http://127.0.0.1:10001/admin](http://127.0.0.1:10001/admin)
 
-Доступ в админку по умолчанию:
+Доступ в админку задается в `.env` через `ADMIN_EMAIL` и `ADMIN_PASSWORD`.
+
+Если `.env` не создан, используются значения по умолчанию:
 
 - email: `admin@example.com`
 - пароль: `Admin123!`
@@ -33,7 +41,7 @@ docker compose down -v
 - `app` - PHP 8.2 + Apache
 - `db` - PostgreSQL 16
 - порт приложения: `10001`
-- порт PostgreSQL: `5432`
+- порт PostgreSQL доступен только локально на сервере: `127.0.0.1:5432`
 
 При старте контейнер сам:
 
@@ -71,3 +79,5 @@ docker compose down -v
 docker compose down -v
 docker compose up --build
 ```
+
+Важно: пароль PostgreSQL применяется только при первом создании volume базы. Если поменять `DB_PASSWORD` в `.env` после запуска, нужно либо обновить пароль внутри PostgreSQL, либо пересоздать volume через `docker compose down -v`.
